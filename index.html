@@ -105,77 +105,87 @@
 
 <!-- Firebase SDKs -->
 <script type="module">
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    // 1. ブラウザで動くようにURL形式でインポートします (v10系を使用)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCNgyBeSzbc74e6iWNnY0irswl24ciAfcg",
-  authDomain: "arcana-flame-game.firebaseapp.com",
-  projectId: "arcana-flame-game",
-  storageBucket: "arcana-flame-game.firebasestorage.app",
-  messagingSenderId: "562804440230",
-  appId: "1:562804440230:web:26f7bd08ea47d39ad80867",
-  measurementId: "G-XT2EDR06R1"
-};
+    // 2. あなたのFirebase設定 (提示いただいたもの)
+    const firebaseConfig = {
+        apiKey: "AIzaSyCNgyBeSzbc74e6iWNnY0irswl24ciAfcg",
+        authDomain: "arcana-flame-game.firebaseapp.com",
+        projectId: "arcana-flame-game",
+        storageBucket: "arcana-flame-game.firebasestorage.app",
+        messagingSenderId: "562804440230",
+        appId: "1:562804440230:web:26f7bd08ea47d39ad80867",
+        measurementId: "G-XT2EDR06R1"
+    };
 
-
-    // Initialize Firebase
+    // 3. Firebaseの初期化
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // グローバル変数として公開（HTMLボタンから呼ぶため）
+    // 4. ログイン機能の実装 (HTMLのボタンから呼べるようにwindowに登録)
     window.Auth = {
         user: null,
         async login() {
             try {
+                // ポップアップでGoogleログインを表示
                 const result = await signInWithPopup(auth, provider);
-                // ログイン成功時の処理は onAuthStateChanged で行います
+                console.log("Login Success:", result.user);
             } catch (error) {
                 console.error("Login Failed:", error);
-                alert("ログインに失敗しました。ローカルサーバーで実行していますか？(file://では動作しません)");
+                // エラー内容をアラートで表示（デバッグ用）
+                alert("ログインエラー: " + error.message);
             }
         }
     };
 
-    // ユーザーの状態監視
+    // 5. ログイン状態の監視 (ログイン成功後に自動で動く処理)
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            console.log("User detected:", user.uid);
             window.Auth.user = user;
+            
+            // 画面の切り替え
             document.getElementById('user-name').innerText = user.displayName;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('menu-screen').classList.remove('hidden');
             
-            // データベースからユーザー情報を取得（なければ作成）
+            // データの読み込み
             await Gacha.loadUserData(user.uid);
+        } else {
+            console.log("No user logged in");
         }
     });
 
+    // 6. ガチャとデータベース機能
     window.Gacha = {
         stones: 0,
-        collection: [], // 持っているカードIDリスト
+        collection: [], 
 
         async loadUserData(uid) {
-            const userRef = doc(db, "users", uid);
-            const docSnap = await getDoc(userRef);
+            try {
+                const userRef = doc(db, "users", uid);
+                const docSnap = await getDoc(userRef);
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                this.stones = data.stones || 0;
-                this.collection = data.collection || [];
-            } else {
-                // 初回登録：石3000個プレゼント
-                this.stones = 3000;
-                this.collection = [];
-                await setDoc(userRef, { stones: 3000, collection: [] });
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    this.stones = data.stones || 0;
+                    this.collection = data.collection || [];
+                } else {
+                    // 初回登録：石3000個プレゼントしてDBに保存
+                    this.stones = 3000;
+                    this.collection = [];
+                    await setDoc(userRef, { stones: 3000, collection: [] });
+                }
+                this.updateDisplay();
+            } catch (e) {
+                console.error("DB Load Error:", e);
+                alert("データの読み込みに失敗しました");
             }
-            this.updateDisplay();
         },
 
         updateDisplay() {
@@ -188,11 +198,9 @@ const firebaseConfig = {
             const uid = window.Auth.user.uid;
             const userRef = doc(db, "users", uid);
             
-            // 画面反映
             this.stones += 500;
             this.updateDisplay();
             
-            // DB保存
             await updateDoc(userRef, {
                 stones: increment(500)
             });
@@ -205,21 +213,20 @@ const firebaseConfig = {
                 return;
             }
 
-            // 石を消費
             this.stones -= 100;
             this.updateDisplay();
 
-            // 抽選ロジック（DBキー一覧からランダム）
+            // DB内のカードIDからランダム抽選
             const keys = Object.keys(DB);
             const hitId = keys[Math.floor(Math.random() * keys.length)];
             const cardData = DB[hitId];
 
-            // コレクションに追加
             this.collection.push(hitId);
 
-            // DB更新
             const uid = window.Auth.user.uid;
             const userRef = doc(db, "users", uid);
+            
+            // DB更新
             await updateDoc(userRef, {
                 stones: increment(-100),
                 collection: arrayUnion(hitId)
@@ -227,14 +234,19 @@ const firebaseConfig = {
 
             // 結果表示
             const resDiv = document.getElementById('gacha-result');
+            // CSSクラスを正しく適用するための判定
+            let typeClass = 'unit';
+            if (cardData.type === 'SPELL') typeClass = 'spell';
+            if (cardData.type === 'REACT') typeClass = 'reaction';
+
             resDiv.innerHTML = `
                 <div style="text-align:center; animation: pop 0.5s;">
                     <div style="font-size:12px; color:#888;">GET!</div>
-                    <div class="card ${cardData.type === TYPE.UNIT ? 'unit' : (cardData.type === TYPE.SPELL ? 'spell' : 'reaction')}" style="width:80px; height:110px; margin:0 auto;">
+                    <div class="card ${typeClass}" style="width:80px; height:110px; margin:0 auto;">
                         <div class="card-name">${cardData.name}</div>
                         <div class="card-art">${cardData.icon}</div>
                         <div class="card-stats">
-                            ${cardData.type===TYPE.UNIT ? `<span class="val-atk">⚔${cardData.atk}</span><span class="val-def">🛡${cardData.def}</span>` : ''}
+                            ${cardData.type==='UNIT' ? `<span class="val-atk">⚔${cardData.atk}</span><span class="val-def">🛡${cardData.def}</span>` : ''}
                         </div>
                     </div>
                 </div>
