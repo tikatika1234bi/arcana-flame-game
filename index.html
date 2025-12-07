@@ -3,170 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Arcana Flame - Full Screen Layout</title>
+    <title>Arcana Flame - Fixed Targeting</title>
     <style>
         /* --- 基本設定 --- */
         :root { --bg-color: #0d0d0d; --panel-bg: #1f1f1f; --text-color: #e0e0e0; --accent-blue: #4a90e2; --accent-red: #e24a4a; --highlight: #ffd700; --sidebar-width: 260px; }
         body { margin: 0; background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
         
-        /* 全画面コンテナ */
         #app { display: flex; width: 100vw; height: 100vh; background: #000; }
         .hidden { display: none !important; }
         
-        /* --- 左サイドバー (詳細 & ログ) --- */
-        #sidebar {
-            width: var(--sidebar-width);
-            background: #181818;
-            border-right: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            box-sizing: border-box;
-            z-index: 20;
-        }
-
-        /* 詳細表示エリア */
-        #card-detail-view {
-            flex: 0 0 320px; /* 固定高さ */
-            background: #252525;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        }
+        /* --- 左サイドバー --- */
+        #sidebar { width: var(--sidebar-width); background: #181818; border-right: 1px solid #444; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; z-index: 20; }
+        #card-detail-view { flex: 0 0 320px; background: #252525; border: 1px solid #555; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
         .detail-name { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #555; width: 100%; padding-bottom: 5px; }
         .detail-icon { font-size: 60px; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .detail-text { font-size: 13px; color: #ccc; line-height: 1.4; text-align: left; width: 100%; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; flex-grow: 1; }
         .detail-stats { display: flex; justify-content: space-around; width: 100%; font-size: 20px; font-weight: bold; margin-top: 10px; }
-        
-        /* ログエリア (サイドバー下部) */
-        #log-panel {
-            flex: 1;
-            background: #111;
-            border: 1px solid #444;
-            border-radius: 5px;
-            overflow-y: auto;
-            padding: 5px;
-            font-size: 11px;
-            color: #bbb;
-            display: flex;
-            flex-direction: column-reverse; /* 新しいログを下に表示させるが、flexで下詰めにする */
-        }
+        #log-panel { flex: 1; background: #111; border: 1px solid #444; border-radius: 5px; overflow-y: auto; padding: 5px; font-size: 11px; color: #bbb; display: flex; flex-direction: column-reverse; }
         .log-line { border-bottom: 1px solid #333; margin-bottom: 3px; padding-bottom: 2px; }
 
-        /* --- メインボード (右側) --- */
-        #main-board {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            background: radial-gradient(circle at center, #222 0%, #000 100%);
-        }
-
-        /* 敵エリア・自分エリア (伸縮して画面を埋める) */
-        .field-section {
-            flex: 1; /* 均等に広がる */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
+        /* --- メインボード --- */
+        #main-board { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #222 0%, #000 100%); }
+        .field-section { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .enemy-area { background: rgba(100, 30, 30, 0.15); }
         .player-area { background: rgba(30, 60, 100, 0.15); }
-
         .row { display: flex; justify-content: center; gap: 15px; align-items: center; min-height: 130px; }
+        .hand-container { height: 130px; background: rgba(20,20,20,0.95); border-top: 1px solid #444; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 5px 20px; overflow-x: auto; }
 
-        /* 手札エリア (最下部固定) */
-        .hand-container {
-            height: 130px;
-            background: rgba(20,20,20,0.95);
-            border-top: 1px solid #444;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 20px;
-            overflow-x: auto;
-        }
-
-        /* --- カード & スロット --- */
-        .slot {
-            width: 90px;
-            height: 125px;
-            border: 2px dashed #555;
-            border-radius: 8px;
-            position: relative;
-            transition: 0.2s;
-            background: rgba(255,255,255,0.02);
-        }
+        /* --- スロット --- */
+        .slot { width: 90px; height: 125px; border: 2px dashed #555; border-radius: 8px; position: relative; transition: 0.2s; background: rgba(255,255,255,0.02); }
         .slot.reaction { transform: scale(0.85); opacity: 0.7; border-color: #665; }
-        .slot.valid { background: rgba(255, 215, 0, 0.15); border-color: var(--highlight); cursor: pointer; animation: pulse 1s infinite; }
-        .slot.attack-target { background: rgba(255, 50, 50, 0.2); border-color: var(--accent-red); cursor: crosshair; }
-
-        /* カードデザイン */
-        .card {
-            width: 100%; height: 100%;
-            background: var(--panel-bg);
-            border: 2px solid #777;
-            border-radius: 6px;
-            display: flex; flex-direction: column;
-            padding: 3px; box-sizing: border-box;
-            cursor: pointer; position: relative;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-            transition: transform 0.15s;
-        }
+        /* 召喚可能な空きスロット */
+        .slot.summon-valid { background: rgba(255, 215, 0, 0.15); border-color: var(--highlight); cursor: pointer; animation: pulse 1s infinite; }
+        
+        /* --- カード --- */
+        .card { width: 100%; height: 100%; background: var(--panel-bg); border: 2px solid #777; border-radius: 6px; display: flex; flex-direction: column; padding: 3px; box-sizing: border-box; cursor: pointer; position: relative; box-shadow: 0 5px 10px rgba(0,0,0,0.5); transition: transform 0.15s; }
         .card:hover { transform: translateY(-5px); border-color: #aaa; z-index: 10; }
         .card.selected { border-color: var(--highlight); box-shadow: 0 0 15px var(--highlight); transform: translateY(-10px); z-index: 100; }
         .card.exhausted { filter: grayscale(1) brightness(0.6); cursor: default; }
         .card.face-down { background: repeating-linear-gradient(135deg, #222, #222 10px, #333 10px, #333 20px); border-color: #444; }
         .card.face-down * { display: none; }
         
+        /* ターゲット可能なカード（スペル対象や攻撃対象） */
+        .card.target-valid { border: 3px solid #00ff00; box-shadow: 0 0 15px #00ff00; animation: pulse 1s infinite; z-index: 50; }
+        .card.attack-target { border: 3px solid #ff0000; box-shadow: 0 0 15px #ff0000; cursor: crosshair; }
+
         .card.unit { border-top: 4px solid #a3b1b5; }
         .card.spell { border-top: 4px solid #b580d1; }
         .card.reaction { border-top: 4px solid #e08e45; }
-
         .card-name { font-size: 10px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; color: #fff; margin-bottom: 2px;}
         .card-art { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 32px; background: rgba(0,0,0,0.3); border-radius: 3px; margin-bottom: 2px; }
         .card-mini-stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 12px; padding: 0 4px; background: rgba(0,0,0,0.5); border-radius: 2px; }
-        
         .val-atk { color: #ff8888; } .val-def { color: #88aaff; }
 
         /* --- UIパーツ --- */
-        .center-hud {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 50;
-            pointer-events: none;
-            text-align: center;
-        }
+        .center-hud { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; pointer-events: none; text-align: center; }
         #phase-badge { background: var(--accent-blue); color: #fff; padding: 5px 25px; border-radius: 20px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-bottom: 15px; display: inline-block; }
         #btn-next { pointer-events: auto; background: #eee; color: #111; padding: 10px 40px; font-size: 18px; border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        
         .lp-badge { position: absolute; font-weight: bold; font-size: 16px; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 5px; border: 1px solid #555; z-index: 10; }
         .enemy-lp { top: 15px; left: 15px; color: var(--accent-red); }
         .player-lp { bottom: 15px; left: 15px; color: var(--accent-blue); }
-
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .menu-btn { padding: 10px 20px; background: #444; color: #fff; margin: 5px; min-width: 140px; border: 1px solid #666; font-size: 16px; cursor: pointer; }
         .gacha-btn { padding: 15px 40px; font-size: 18px; background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000; margin: 10px; cursor: pointer; border:none; font-weight:bold; }
-        
-        /* Animations */
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         .float-txt { position: absolute; font-weight: bold; font-size: 24px; animation: floatUp 1.2s forwards; z-index: 150; pointer-events: none; text-shadow: 2px 2px 0 #000; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         @keyframes floatUp { 0% { transform:translateY(0) scale(1); opacity:1; } 100% { transform:translateY(-60px) scale(1.5); opacity:0; } }
     </style>
 </head>
 <body>
 
-<!-- 1. オーバーレイ画面群 -->
 <div id="login-screen" class="overlay">
     <h1 style="color:var(--highlight); font-size:48px; margin-bottom:10px;">ARCANA FLAME</h1>
     <button class="gacha-btn" onclick="Auth.login()">Googleでログイン</button>
@@ -183,14 +89,12 @@
         <span id="display-name">Guest</span> | 💎 <span id="menu-stones">0</span>
     </div>
     <h2>MAIN MENU</h2>
-    
     <div style="background:#222; padding:20px; border-radius:10px; text-align:center; margin-bottom:20px;">
         <h3>🔮 カードパック</h3>
         <button class="gacha-btn" onclick="Gacha.pull()">100💎 で引く</button>
         <button id="bonus-btn" class="menu-btn" onclick="Gacha.addFreeStones()">ボーナス受取</button>
         <div id="gacha-result" style="height:40px; margin-top:10px; color:#ffd700;"></div>
     </div>
-
     <div>
         <h3>⚔️ バトル開始</h3>
         <button class="menu-btn" onclick="Game.start(0)">🔥 ドラゴン</button>
@@ -205,21 +109,12 @@
     <button class="menu-btn" onclick="location.reload()">タイトルへ戻る</button>
 </div>
 
-<!-- 2. メインゲーム画面 (2カラムレイアウト) -->
 <div id="game-app" class="hidden" style="display:flex;">
-    
     <!-- 左サイドバー -->
     <div id="sidebar">
-        <!-- カード詳細 -->
-        <div id="card-detail-view">
-            <div style="color:#666; padding-top:50px;">カードを選択</div>
-        </div>
-        <!-- ログ -->
-        <div id="log-panel">
-            <div class="log-line">Game Ready...</div>
-        </div>
+        <div id="card-detail-view"><div style="color:#666; padding-top:50px;">カードを選択</div></div>
+        <div id="log-panel"><div class="log-line">Game Ready...</div></div>
     </div>
-
     <!-- 右メインボード -->
     <div id="main-board">
         <!-- 敵フィールド -->
@@ -228,35 +123,29 @@
             <div class="row" id="cpu-units"><div class="slot" data-i="0"></div><div class="slot" data-i="1"></div><div class="slot" data-i="2"></div></div>
             <div class="row" id="cpu-reacts" style="min-height:90px;"><div class="slot reaction" data-i="0"></div><div class="slot reaction" data-i="1"></div></div>
         </div>
-
         <!-- センターHUD -->
         <div class="center-hud">
             <div id="phase-badge">START</div><br>
             <button id="btn-next" onclick="Game.nextPhase()">Start</button>
         </div>
-
         <!-- 自分フィールド -->
         <div class="field-section player-area">
             <div class="row" id="player-reacts" style="min-height:90px;"><div class="slot reaction" data-i="0"></div><div class="slot reaction" data-i="1"></div></div>
             <div class="row" id="player-units"><div class="slot" data-i="0"></div><div class="slot" data-i="1"></div><div class="slot" data-i="2"></div></div>
             <div class="lp-badge player-lp">YOU: <span id="player-lp">12</span></div>
         </div>
-
         <!-- 手札 -->
         <div class="hand-container" id="player-hand"></div>
     </div>
-
     <button class="menu-btn" style="position:absolute; top:10px; right:10px; z-index:500; min-width:60px; font-size:12px;" onclick="location.reload()">RETIRE</button>
 </div>
 
-<!-- Scripts -->
 <script type="module">
-    // Firebase Setup
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ★★★ Firebase Config (書き換えてください) ★★★
+    // ★★★ Firebase Config ★★★
 const firebaseConfig = {
   apiKey: "AIzaSyCNgyBeSzbc74e6iWNnY0irswl24ciAfcg",
   authDomain: "arcana-flame-game.firebaseapp.com",
@@ -272,12 +161,11 @@ const firebaseConfig = {
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // --- Game Constants & DB ---
+    // Data
     const TYPE = { UNIT: 'UNIT', SPELL: 'SPELL', REACT: 'REACT' };
     const TARGET = { NONE: 'NONE', ENEMY: 'ENEMY', ALLY: 'ALLY', ANY: 'ANY' };
     const PHASE = { DRAW: 'DRAW', MAIN: 'MAIN', BATTLE: 'BATTLE', END: 'END' };
 
-    // Card Database (Descriptions added for detail view)
     const DB = {
         'd01': { name: 'フレイム・ドラゴン', type: TYPE.UNIT, atk: 3, def: 3, icon: '🐲', desc: '標準的なドラゴン。バランスが良い。', target: TARGET.NONE },
         'd02': { name: 'ボルカニック', type: TYPE.UNIT, atk: 4, def: 2, icon: '🦖', desc: '攻撃力が高いが耐久は低い。アタッカー。', target: TARGET.NONE },
@@ -288,7 +176,6 @@ const firebaseConfig = {
         's02': { name: 'フレイムバースト', type: TYPE.SPELL, icon: '🔥', desc: '敵ユニット1体に3ダメージを与える。', effect: 'dmg_3', target: TARGET.ENEMY },
         's03': { name: '熱風の号令', type: TYPE.SPELL, icon: '🌬️', desc: '全ての味方ユニットのATKをターン終了時まで+1する。', effect: 'all_atk_1_turn', target: TARGET.NONE },
         'r01': { name: 'ドラゴンの咆哮', type: TYPE.REACT, icon: '📢', desc: '【被攻撃時】その味方のATKをターン終了時まで+1する。', trigger: 'attacked', effect: 'react_atk_1' },
-
         'm01': { name: 'アプレンティス', type: TYPE.UNIT, atk: 2, def: 2, icon: '🧙', desc: '【召喚時】味方ユニット1体のDEFを+1する(永続)。', effect: 'buff_def_1', target: TARGET.NONE },
         'm02': { name: 'クロノマンサー', type: TYPE.UNIT, atk: 1, def: 3, icon: '⏳', desc: '【永続】スペルによるダメージを1軽減する。', passive: 'spell_resist', target: TARGET.NONE },
         'm03': { name: 'ルーン使い', type: TYPE.UNIT, atk: 2, def: 3, icon: '✨', desc: '【永続】味方ユニット全員のATKを+1する。', passive: 'aura_atk_1', target: TARGET.NONE },
@@ -300,7 +187,6 @@ const firebaseConfig = {
         's14': { name: 'マナシールド', type: TYPE.SPELL, icon: '🛡️', desc: '味方1体に「このターン破壊されない」を付与する。', effect: 'shield', target: TARGET.ALLY },
         'r11': { name: '反転の結界', type: TYPE.REACT, icon: '🛑', desc: '【相手スペル発動時】そのスペルを無効化する。', trigger: 'spell', effect: 'negate' },
         'r12': { name: 'アストラル', type: TYPE.REACT, icon: '🌌', desc: '【敵が3体以上】敵2体を手札に戻す。', trigger: 'full_field', effect: 'bounce_2' },
-
         'b01': { name: 'シールドベア', type: TYPE.UNIT, atk: 2, def: 5, icon: '🐻', desc: '非常に高い耐久力を持つ壁。', target: TARGET.NONE },
         'b02': { name: 'アイアンファング', type: TYPE.UNIT, atk: 3, def: 4, icon: '🐺', desc: '攻守のバランスが良い野獣。', target: TARGET.NONE },
         'b03': { name: 'リペアホーン', type: TYPE.UNIT, atk: 1, def: 4, icon: '🦄', desc: '【召喚時】味方1体のDEFを+2する。', effect: 'buff_def_2', target: TARGET.NONE },
@@ -318,7 +204,6 @@ const firebaseConfig = {
         ['b01','b01','b01', 'b02','b02','b02', 'b03','b03', 'b04','b04', 'b05','b05', 's21','s21', 's22','s22', 's23','s23', 'r21','r21']
     ];
 
-    // --- Auth & User ---
     window.Auth = {
         user: null, nickname: null,
         async login() { try { await signInWithPopup(auth, provider); } catch(e){ alert("Login Error"); } },
@@ -344,7 +229,6 @@ const firebaseConfig = {
         }
     });
 
-    // --- Gacha ---
     window.Gacha = {
         stones: 0, collection: [], lastBonusDate: null,
         async loadUserData(uid) {
@@ -371,8 +255,7 @@ const firebaseConfig = {
         },
         async addFreeStones() {
             const today = new Date().toDateString();
-            this.stones += 500; this.lastBonusDate = today;
-            this.updateUI();
+            this.stones += 500; this.lastBonusDate = today; this.updateUI();
             await updateDoc(doc(db, "users", window.Auth.user.uid), { stones: increment(500), lastBonusDate: today });
         },
         async pull() {
@@ -386,7 +269,6 @@ const firebaseConfig = {
         }
     };
 
-    // --- Game Logic ---
     class Card {
         constructor(id, owner) {
             this.id = id; this.data = DB[id]; this.owner = owner;
@@ -449,15 +331,13 @@ const firebaseConfig = {
         player: null, cpu: null, turn: 'player', phase: PHASE.DRAW, selectedCard: null, selectedUnit: null, gameOver: false, firstTurn: true,
         start(deckIdx) {
             document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('game-app').style.display = 'flex'; // Ensure flex
             document.getElementById('game-app').classList.remove('hidden');
-            
             const createPlayer = (id, dIdx) => ({ id, lp: 12, deck: this.shuffle(DECK_LISTS[dIdx].map(cid => new Card(cid, id))), hand: [], units: [null, null, null], reacts: [null, null], summonCount: 0 });
             this.player = createPlayer('player', deckIdx);
             this.cpu = createPlayer('cpu', (deckIdx + 1 + Math.floor(Math.random()*2)) % 3);
             for(let i=0; i<4; i++) { this.draw(this.player); this.draw(this.cpu); }
             this.turn = Math.random() < 0.5 ? 'player' : 'cpu';
-            UI.log(`Battle Start! 先攻: ${this.turn === 'player' ? 'YOU' : 'CPU'}`);
+            UI.log(`Battle Start! 先攻: ${this.turn.toUpperCase()}`);
             this.startTurn();
         },
         shuffle(arr) { for(let i=arr.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; },
@@ -574,7 +454,42 @@ const firebaseConfig = {
                 const u=list[i];
                 if(u){
                     const e=this.createCard(u);
-                    e.onclick=(ev)=>{ ev.stopPropagation(); this.showDetail(u); if(owner==='player'&&Game.phase===PHASE.BATTLE&&!isReact&&u.canAttack&&!u.hasAttacked){Game.selectedUnit=u;this.update();UI.log("攻撃目標を選択");} };
+                    // ★★★ カードのクリックイベント（ターゲット・詳細）の修正 ★★★
+                    let isValidTarget = false;
+                    if (Game.turn === 'player' && Game.phase === PHASE.MAIN && Game.selectedCard) {
+                        const sc = Game.selectedCard;
+                        if(owner==='player' && !isReact && sc.data.target === TARGET.ALLY) isValidTarget = true;
+                        if(owner==='cpu' && !isReact && sc.data.target === TARGET.ENEMY) isValidTarget = true;
+                    }
+                    if(isValidTarget) e.classList.add('target-valid');
+
+                    // バトルフェイズのターゲット
+                    let isAttackTarget = false;
+                    if(owner==='cpu' && !isReact && Game.phase===PHASE.BATTLE && Game.selectedUnit) {
+                        e.classList.add('attack-target'); isAttackTarget = true;
+                    }
+
+                    e.onclick=(ev)=>{ 
+                        ev.stopPropagation(); 
+                        this.showDetail(u); 
+                        // スペル発動処理
+                        if(isValidTarget) {
+                            const hIdx = Game.player.hand.indexOf(Game.selectedCard);
+                            Game.playCard(Game.player, hIdx, u);
+                            Game.selectedCard = null;
+                            return;
+                        }
+                        // 攻撃選択処理
+                        if(owner==='player'&&Game.phase===PHASE.BATTLE&&!isReact&&u.canAttack&&!u.hasAttacked){
+                            Game.selectedUnit=u; this.update(); UI.log("攻撃目標を選択");
+                        }
+                        // 攻撃実行処理
+                        if(isAttackTarget) {
+                            Game.attack(Game.selectedUnit, i);
+                            Game.selectedUnit = null;
+                        }
+                    };
+                    
                     if(owner==='cpu'&&isReact)e.classList.add('face-down');
                     if(u.hasAttacked||u.isLocked)e.classList.add('exhausted');
                     if(u.destructionImmune)e.style.boxShadow="0 0 5px #5c97f7";
@@ -584,12 +499,8 @@ const firebaseConfig = {
                 if(Game.turn==='player'){
                     if(Game.phase===PHASE.MAIN&&Game.selectedCard){
                         const c=Game.selectedCard; const hi=Game.player.hand.indexOf(c);
-                        if(owner==='player'&&!isReact&&!u&&c.data.type===TYPE.UNIT&&Game.player.summonCount<2&&!Game.player.units.some(k=>k&&k.data.name===c.data.name)){sl.classList.add('valid');sl.onclick=()=>{Game.playCard(Game.player,hi,null,i);Game.selectedCard=null;};}
-                        if(owner==='player'&&isReact&&!u&&c.data.type===TYPE.REACT){sl.classList.add('valid');sl.onclick=()=>{Game.playCard(Game.player,hi,null,i);Game.selectedCard=null;};}
-                        if(((owner==='player'&&c.data.target===TARGET.ALLY)||(owner==='cpu'&&c.data.target===TARGET.ENEMY))&&!isReact&&u){sl.classList.add('valid');sl.onclick=()=>{Game.playCard(Game.player,hi,u);Game.selectedCard=null;};}
-                    }
-                    if(Game.phase===PHASE.BATTLE&&owner==='cpu'&&!isReact&&u&&Game.selectedUnit){
-                        sl.classList.add('attack-target');sl.onclick=()=>{Game.attack(Game.selectedUnit,i);Game.selectedUnit=null;};
+                        if(owner==='player'&&!isReact&&!u&&c.data.type===TYPE.UNIT&&Game.player.summonCount<2&&!Game.player.units.some(k=>k&&k.data.name===c.data.name)){sl.classList.add('summon-valid');sl.onclick=()=>{Game.playCard(Game.player,hi,null,i);Game.selectedCard=null;};}
+                        if(owner==='player'&&isReact&&!u&&c.data.type===TYPE.REACT){sl.classList.add('summon-valid');sl.onclick=()=>{Game.playCard(Game.player,hi,null,i);Game.selectedCard=null;};}
                     }
                 }
             });
@@ -597,7 +508,7 @@ const firebaseConfig = {
         },
         createCard(c){
             const e=document.createElement('div');e.className=`card ${c.data.type.toLowerCase()}`;
-            e.innerHTML=`<div class="card-name">${c.data.name}</div><div class="card-art">${c.data.icon}</div><div class="card-stats">${c.data.type===TYPE.UNIT?`<span class="val-atk">⚔${c.atk}</span><span class="val-def">🛡${c.def}</span>`:''}</div>`;
+            e.innerHTML=`<div class="card-name">${c.data.name}</div><div class="card-art">${c.data.icon}</div><div class="card-mini-stats">${c.data.type===TYPE.UNIT?`<span class="val-atk">⚔${c.atk}</span><span class="val-def">🛡${c.def}</span>`:''}</div>`;
             return e;
         },
         showDetail(c){
@@ -606,7 +517,7 @@ const firebaseConfig = {
                 <div class="detail-name">${c.data.name}</div>
                 <div class="detail-icon">${c.data.icon}</div>
                 ${c.data.type===TYPE.UNIT?`<div class="detail-stats"><span class="val-atk">⚔${c.atk}</span> <span class="val-def">🛡${c.def}</span></div>`:''}
-                <div class="detail-text">${c.data.desc}</div>
+                <div class="detail-text">${c.data.desc || c.data.effect || '-'}</div>
             `;
         },
         log(m){ const d=document.createElement('div');d.className='log-line';d.innerText=m;document.getElementById('log-panel').appendChild(d); document.getElementById('log-panel').scrollTop = document.getElementById('log-panel').scrollHeight;},
