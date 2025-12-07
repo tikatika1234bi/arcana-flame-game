@@ -3,27 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Arcana Flame - Fixed Targeting</title>
+    <title>Arcana Flame - Scroll Fix</title>
     <style>
         /* --- 基本設定 --- */
         :root { --bg-color: #0d0d0d; --panel-bg: #1f1f1f; --text-color: #e0e0e0; --accent-blue: #4a90e2; --accent-red: #e24a4a; --highlight: #ffd700; --sidebar-width: 260px; }
         body { margin: 0; background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
         
-        #app { display: flex; width: 100vw; height: 100vh; background: #000; }
+        #app { display: flex; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
         .hidden { display: none !important; }
         
         /* --- 左サイドバー --- */
-        #sidebar { width: var(--sidebar-width); background: #181818; border-right: 1px solid #444; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; z-index: 20; }
-        #card-detail-view { flex: 0 0 320px; background: #252525; border: 1px solid #555; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        #sidebar { 
+            width: var(--sidebar-width); 
+            background: #181818; 
+            border-right: 1px solid #444; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            z-index: 20; 
+            height: 100vh; /* 高さ固定 */
+        }
+
+        #card-detail-view { 
+            flex: 0 0 320px; 
+            background: #252525; 
+            border: 1px solid #555; 
+            border-radius: 8px; 
+            padding: 15px; 
+            text-align: center; 
+            margin-bottom: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); 
+        }
         .detail-name { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #555; width: 100%; padding-bottom: 5px; }
         .detail-icon { font-size: 60px; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .detail-text { font-size: 13px; color: #ccc; line-height: 1.4; text-align: left; width: 100%; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; flex-grow: 1; }
         .detail-stats { display: flex; justify-content: space-around; width: 100%; font-size: 20px; font-weight: bold; margin-top: 10px; }
-        #log-panel { flex: 1; background: #111; border: 1px solid #444; border-radius: 5px; overflow-y: auto; padding: 5px; font-size: 11px; color: #bbb; display: flex; flex-direction: column-reverse; }
-        .log-line { border-bottom: 1px solid #333; margin-bottom: 3px; padding-bottom: 2px; }
+        
+        /* ★ログパネルの修正★ */
+        #log-panel { 
+            flex: 1; /* 残りの高さを埋める */
+            min-height: 0; /* 重要：これがないとFlex子要素が無限に伸びる */
+            background: #111; 
+            border: 1px solid #444; 
+            border-radius: 5px; 
+            padding: 5px; 
+            font-size: 11px; 
+            color: #bbb; 
+            overflow-y: auto; /* 縦スクロール有効化 */
+            display: block;
+        }
+        .log-line { 
+            border-bottom: 1px solid #333; 
+            margin-bottom: 3px; 
+            padding-bottom: 2px; 
+            word-wrap: break-word;
+        }
 
         /* --- メインボード --- */
-        #main-board { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #222 0%, #000 100%); }
+        #main-board { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #222 0%, #000 100%); height: 100vh; }
         .field-section { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .enemy-area { background: rgba(100, 30, 30, 0.15); }
         .player-area { background: rgba(30, 60, 100, 0.15); }
@@ -33,7 +74,6 @@
         /* --- スロット --- */
         .slot { width: 90px; height: 125px; border: 2px dashed #555; border-radius: 8px; position: relative; transition: 0.2s; background: rgba(255,255,255,0.02); }
         .slot.reaction { transform: scale(0.85); opacity: 0.7; border-color: #665; }
-        /* 召喚可能な空きスロット */
         .slot.summon-valid { background: rgba(255, 215, 0, 0.15); border-color: var(--highlight); cursor: pointer; animation: pulse 1s infinite; }
         
         /* --- カード --- */
@@ -43,8 +83,6 @@
         .card.exhausted { filter: grayscale(1) brightness(0.6); cursor: default; }
         .card.face-down { background: repeating-linear-gradient(135deg, #222, #222 10px, #333 10px, #333 20px); border-color: #444; }
         .card.face-down * { display: none; }
-        
-        /* ターゲット可能なカード（スペル対象や攻撃対象） */
         .card.target-valid { border: 3px solid #00ff00; box-shadow: 0 0 15px #00ff00; animation: pulse 1s infinite; z-index: 50; }
         .card.attack-target { border: 3px solid #ff0000; box-shadow: 0 0 15px #ff0000; cursor: crosshair; }
 
@@ -520,7 +558,8 @@ const firebaseConfig = {
                 <div class="detail-text">${c.data.desc || c.data.effect || '-'}</div>
             `;
         },
-        log(m){ const d=document.createElement('div');d.className='log-line';d.innerText=m;document.getElementById('log-panel').appendChild(d); document.getElementById('log-panel').scrollTop = document.getElementById('log-panel').scrollHeight;},
+        // ★ログの修正: Prepend (新しいのが上)
+        log(m){ const d=document.createElement('div');d.className='log-line';d.innerText=m; const p=document.getElementById('log-panel'); p.insertBefore(d, p.firstChild); },
         floatText(t,txt,c){
             const el=document.createElement('div');el.className='float-txt';el.innerText=txt;el.style.color=c;
             let p=null;
